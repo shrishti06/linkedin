@@ -18,6 +18,7 @@ if st.button("Load and Index Resumes"):
         resumes = load_resumes("./resumes")
         vectorstore = create_vectorstore(resumes)
         st.session_state.vectorstore = vectorstore
+        os.makedirs("vectorstore/faiss_index", exist_ok=True)
         with open("vectorstore/faiss_index/index.pkl", "wb") as f:
             pickle.dump(vectorstore, f)
         st.success("Resumes indexed successfully!")
