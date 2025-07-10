@@ -1,8 +1,7 @@
 import os
-import docx2txt
-import PyPDF2
-# import textract
 from langchain_core.documents import Document
+from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader
+# import textract
 
 
 def load_resumes(folder_path):
@@ -10,20 +9,24 @@ def load_resumes(folder_path):
     for filename in os.listdir(folder_path):
         try:
             file_path = os.path.join(folder_path, filename)
+            loader = None
+            text = None
             if filename.endswith(".pdf"):
-                with open(file_path, "rb") as f:
-                    reader = PyPDF2.PdfReader(f)
-                    text = "\n".join(page.extract_text() for page in reader.pages if page.extract_text())
-            elif filename.endswith(".docx") or filename.endswith(".doc"):
-                text = docx2txt.process(file_path)
+                loader = PyPDFLoader(file_path)
+            elif filename.endswith(".docx"):
+                loader = Docx2txtLoader(file_path)
             # elif filename.endswith(".doc"):
-                # text = textract.process(file_path, extension='doc').decode('utf-8')
+            #     text = textract.process(file_path, extension='doc').decode('utf-8')
+            #     documents.append(Document(page_content=text, metadata={"source": filename}))
             else:
                 continue
+            if loader is not None:
+                docs = loader.load()
+                documents.extend(docs)
         except Exception as e:
             print(f"Error processing {filename}: {e}")
-            continue       
-        documents.append(Document(page_content=text, metadata={"source": filename}))
+        # This line is now handled above for .doc files, so it can be removed.
+        # documents.append(Document(page_content=text, metadata={"source": filename}))
     print(f"Loaded {len(documents)} documents from {folder_path}")
     if not documents:
         print("No valid documents found in the specified folder.")

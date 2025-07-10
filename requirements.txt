@@ -1,15 +1,11 @@
 streamlit
 langchain
+langchain-community
 faiss-cpu
 tqdm
 python-dotenv
-PyPDF2
 openai
 google-search-results
-pypdf
-docx2txt
-textract
-langchain-community
 langchain-huggingface
 langchain-core
 langchain-groq
