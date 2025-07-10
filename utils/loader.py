@@ -1,6 +1,7 @@
 import os
 import docx2txt
 import PyPDF2
+# import textract
 from langchain_core.documents import Document
 
 
@@ -15,10 +16,17 @@ def load_resumes(folder_path):
                     text = "\n".join(page.extract_text() for page in reader.pages if page.extract_text())
             elif filename.endswith(".docx") or filename.endswith(".doc"):
                 text = docx2txt.process(file_path)
+            # elif filename.endswith(".doc"):
+                # text = textract.process(file_path, extension='doc').decode('utf-8')
             else:
                 continue
         except Exception as e:
             print(f"Error processing {filename}: {e}")
             continue       
         documents.append(Document(page_content=text, metadata={"source": filename}))
+    print(f"Loaded {len(documents)} documents from {folder_path}")
+    if not documents:
+        print("No valid documents found in the specified folder.")
+    else:
+        print(f"Successfully loaded {len(documents)} documents.")
     return documents

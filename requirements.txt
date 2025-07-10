@@ -8,6 +8,7 @@ openai
 google-search-results
 pypdf
 docx2txt
+textract
 langchain-community
 langchain-huggingface
 langchain-core
