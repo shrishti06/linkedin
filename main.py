@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from utils.loader import load_resumes
 # from utils.embedderinmemory import init_faiss_inmemory
 from utils.embedder import init_FAISSDB
-from utils.search import query_resumes, retrieve_top_docs
+from utils.search import retrieve_top_docs, query_resumes
 from utils.linkedinsearch import search_linkedin
 from utils.decompose import decompose_query
 import warnings
@@ -38,11 +38,11 @@ if st.button("Search") and query:
     # logging.debug("Retrieving top documents from local vectorstore")
     subqueries = decompose_query(query,os.getenv("OPENAI_API_KEY"))
     print("subqueries done",subqueries)
-    top_docs = retrieve_top_docs(vectorstore, subqueries, k=5)
+    top_docs = retrieve_top_docs(vectorstore, subqueries, k=20)
     print("embedding load")
     # logging.debug(f"Retrieved {len(top_docs)} top documents from local vectorstore")
     # logging.debug("Querying local resumes")
-    local_results = query_resumes(query)
+    local_results = query_resumes(vectorstore=vectorstore,query=query)
     print(local_results)
     # logging.debug("Local resume search completed")
     # logging.debug(f"Found {len(local_results)} local resumes matching the query")
@@ -56,10 +56,10 @@ if st.button("Search") and query:
             st.markdown(f"[Profile Link]({profile['link']})")
             st.text(profile['snippet'])
             st.markdown("---")
-    # with tab_local:
-    #     st.subheader("Top Matching Profiles:")
-        # st.write(f"Found {len(local_results)} matching profiles in local resumes.")
-        # for i, doc in enumerate(local_results):
-        #     st.markdown(f"**Source:** {doc.metadata['source']}")
-        #     st.text(doc.page_content[:1000])  # Limit displayed text
-        #     st.markdown("---")
+    with tab_local:
+        st.subheader("Top Matching Profiles:")
+        st.write(f"Found {len(local_results)} matching profiles in local resumes.")
+        for i, doc in enumerate(local_results):
+            st.markdown(f"**Source:** {doc.metadata['source']}")
+            st.text(doc.page_content[:1000])  # Limit displayed text
+            st.markdown("---")

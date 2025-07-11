@@ -8,7 +8,7 @@ def init_FAISSDB(documents, persist_dir="vectorstore/faiss_index"):
     embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
     
     if os.path.exists(persist_dir):
-        return FAISS.load_local(persist_dir, embedding_model)
+        os.rmdir(persist_dir)
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
     chunks = splitter.split_documents(documents)
     vectorstore = FAISS.from_documents(chunks, embedding_model)

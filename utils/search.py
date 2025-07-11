@@ -27,13 +27,13 @@ def RAG(qa_chain:RetrievalQA,query:str):
     result=qa_chain.invoke({"query": query})
     return result
 
-def query_resumes(query, k=5):
-    qa_chain=init()
-    answer = RAG(qa_chain,query)
-    print(answer)
-    # query = "how do you determine the value of an option"
-    # answer = RAG(qa_chain,query)
-    # pprint(answer)
+# def query_resumes(query, k=5):
+#     qa_chain=init()
+#     answer = RAG(qa_chain,query)
+#     print(answer)
+#     # query = "how do you determine the value of an option"
+#     # answer = RAG(qa_chain,query)
+#     # pprint(answer)
 
 def retrieve_top_docs(vectorstore, subqueries, k=20):
     all_docs = []
@@ -43,3 +43,15 @@ def retrieve_top_docs(vectorstore, subqueries, k=20):
     # Optional: dedup by source
     unique_docs = {doc.metadata["source"]: doc for doc in all_docs}
     return list(unique_docs.values())
+
+
+# def search()
+#     prompt = hub.pull("rlm/rag-prompt")
+
+#     qa_chain = RetrievalQA.from_llm(
+#         llm, retriever=vectorstore.as_retriever(), prompt=prompt
+#     )
+
+def query_resumes(vectorstore, query, k=5):
+    results = vectorstore.similarity_search(query, k=k)
+    return results
