@@ -1,55 +1,54 @@
 import streamlit as st
 import os
-import shutil
 import logging
 from dotenv import load_dotenv
 from utils.loader import load_resumes
-from utils.embedder import create_vectorstore
-from utils.search import query_resumes
-import pickle
+# from utils.embedderinmemory import init_faiss_inmemory
+from utils.embedder import init_FAISSDB
+from utils.search import query_resumes, retrieve_top_docs
 from utils.linkedinsearch import search_linkedin
-
+from utils.decompose import decompose_query
+import warnings
+warnings.filterwarnings("ignore", message="Failed to load GPU Faiss")
 load_dotenv()
-logging.basicConfig(filename='app.log', level=logging.DEBUG,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
 
+# logging.basicConfig(filename='app.log', level=logging.DEBUG,
+#                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 st.title("🔍 Resume Matcher App")
-
-if "vectorstore" not in st.session_state:
-    st.session_state.vectorstore = None
-
-if st.button("Load and Index Resumes"):
-    with st.spinner("Processing resumes..."):
-        if os.path.exists("vectorstore/faiss_index"):
-            shutil.rmtree("vectorstore/faiss_index") 
-        resumes = load_resumes("./resumes")
-        vectorstore = create_vectorstore(resumes)
-        st.session_state.vectorstore = vectorstore
-        os.makedirs("vectorstore/faiss_index", exist_ok=True)
-        with open("vectorstore/faiss_index/index.pkl", "wb") as f:
-            pickle.dump(vectorstore, f)
-        st.success("Resumes indexed successfully!")
 
 query = st.text_input("Enter your query (e.g. 'Python developer with 5 years experience')")
 
 if st.button("Search") and query:
-    tab_linkedin, tab_local = st.tabs(["LinkedIn Search", "Local Resume Search"])
-    logging.debug("linear search initiated")
-    linkedin_results = search_linkedin(query, os.getenv("SERP_API_KEY"))
-    logging.debug("LinkedIn search completed")
-    logging.debug(f"Found {len(linkedin_results)} LinkedIn profiles")
     
-    if not linkedin_results:
-        st.warning("No LinkedIn profiles found for the given query.")
+    # logging.debug("linear search initiated")
+    # linkedin_results = search_linkedin(query, os.getenv("SERP_API_KEY"))
+    # logging.debug("LinkedIn search completed")
+    # logging.debug(f"Found {len(linkedin_results)} LinkedIn profiles")
+    
             
-    logging.debug("Querying local resumes")
-    local_results = query_resumes(st.session_state.vectorstore, query)
-    logging.debug("Local resume search completed")
-    logging.debug(f"Found {len(local_results)} local resumes matching the query")
+    # logging.debug("Starting local resume search")
+    documents = load_resumes(os.environ.get("RESUME_FOLDER"))
+    print("load complete")
+    # vectorstore = init_faiss_inmemory(documents)
+    vectorstore = init_FAISSDB(documents, os.getenv("FAISS_PERSIST_DIR") or "vectorstore/faiss_index")
     
-    if not local_results:
-        st.warning("No local resumes found for the given query.")
+    print("embedding done")
+    # logging.debug("Local vectorstore initialized")
+    # logging.debug("Retrieving top documents from local vectorstore")
+    subqueries = decompose_query(query,os.getenv("OPENAI_API_KEY"))
+    print("subqueries done",subqueries)
+    top_docs = retrieve_top_docs(vectorstore, subqueries, k=5)
+    print("embedding load")
+    # logging.debug(f"Retrieved {len(top_docs)} top documents from local vectorstore")
+    # logging.debug("Querying local resumes")
+    local_results = query_resumes(query)
+    print(local_results)
+    # logging.debug("Local resume search completed")
+    # logging.debug(f"Found {len(local_results)} local resumes matching the query")
+    
+    tab_linkedin, tab_local = st.tabs(["Linked Results", "Resume Search"])
+    linkedin_results = []
     with tab_linkedin:
         st.subheader("LinkedIn Profiles:")
         for profile in linkedin_results:
@@ -57,9 +56,10 @@ if st.button("Search") and query:
             st.markdown(f"[Profile Link]({profile['link']})")
             st.text(profile['snippet'])
             st.markdown("---")
-    with tab_local:
-        st.subheader("Top Matching Profiles:")
-        for doc in local_results:
-            st.markdown(f"**Source:** {doc.metadata['source']}")
-            st.text(doc.page_content[:1000])  # Limit displayed text
-            st.markdown("---")
+    # with tab_local:
+    #     st.subheader("Top Matching Profiles:")
+        # st.write(f"Found {len(local_results)} matching profiles in local resumes.")
+        # for i, doc in enumerate(local_results):
+        #     st.markdown(f"**Source:** {doc.metadata['source']}")
+        #     st.text(doc.page_content[:1000])  # Limit displayed text
+        #     st.markdown("---")
